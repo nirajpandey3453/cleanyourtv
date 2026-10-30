@@ -378,6 +378,11 @@
                     android:text="@string/settings"
                     android:drawableStart="@drawable/ic_settings"
                     android:nextFocusDown="@+id/grid" />
+
+                <ImageView
+                    android:id="@+id/btnProfile"
+                    style="@style/ProfilePill"
+                    android:nextFocusDown="@+id/grid" />
             </LinearLayout>
         </RelativeLayout>
 

@@ -35,6 +35,17 @@ final class SystemSettings {
         }
     }
 
+    /** profile_pill: Accounts (sync) settings, else Add account, else what intent() gives for the main screen. */
+    static Intent accounts(Context context) {
+        PackageManager pm = context.getPackageManager();
+        for (String action : new String[]{Settings.ACTION_SYNC_SETTINGS, Settings.ACTION_ADD_ACCOUNT}) {
+            Intent standard = new Intent(action);
+            ResolveInfo resolved = pm.resolveActivity(standard, PackageManager.MATCH_DEFAULT_ONLY);
+            if (resolved != null && !resolved.activityInfo.name.contains("CTSDummy")) return standard;
+        }
+        return intent(context, Settings.ACTION_SETTINGS);
+    }
+
     private static final ComponentName AOSP_TV_SETTINGS =
             new ComponentName("com.android.tv.settings", "com.android.tv.settings.MainSettings");
 

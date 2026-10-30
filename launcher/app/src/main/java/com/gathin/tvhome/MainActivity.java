@@ -322,6 +322,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     /** fill_dock false: how many dock slots held an app when reorder mode started. */
     private int dockedAtStart;
     private View btnReorder;
+    /** profile_pill: the round photo after Settings. */
+    private ImageView btnProfile;
     /** dock_apps as loaded (config.xml or a theme): a saved Order only applies while these are unchanged. */
     private List<String> dockApps;
     /** fill_dock false: the dock can have empty slots, which reorder mode leaves out and restores afterwards. */
@@ -849,6 +851,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             vpnPlainInk = btnVpn.getCompoundDrawableTintList();
             makeIconOnly(btnVpn);
         }
+        btnProfile = findViewById(R.id.btnProfile);
+        if (cfg.profilePill && !cfg.topMenu) showProfilePill();
         btnSettings.setOnLongClickListener(v -> {
             showSettingsMenu();
             return true;
@@ -866,8 +870,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 return true;
             }
             int firstButton = btnInputs.getVisibility() == View.VISIBLE ? R.id.btnInputs : firstTopButton().getId();
-            int leftButton = rtlMenuBar ? R.id.btnSettings : firstButton;
-            int rightButton = rtlMenuBar ? firstButton : R.id.btnSettings;
+            int lastButton = btnProfile.getVisibility() == View.VISIBLE ? R.id.btnProfile : R.id.btnSettings;
+            int leftButton = rtlMenuBar ? lastButton : firstButton;
+            int rightButton = rtlMenuBar ? firstButton : lastButton;
             if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) return v.getId() == leftButton;
             return keyCode == KeyEvent.KEYCODE_DPAD_RIGHT && v.getId() == rightButton;
         };
@@ -877,9 +882,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnSettings.setOnKeyListener(pillKeys);
         btnReorder.setOnKeyListener(pillKeys);
         btnLibraryTop.setOnKeyListener(pillKeys);
+        btnProfile.setOnKeyListener(pillKeys);
         for (View button : topAppButtons) button.setOnKeyListener(pillKeys);
         if (advancedEffects) {
-            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnWifi, btnVpn, btnReorder, btnLibraryTop, btnSettings));
+            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnWifi, btnVpn, btnReorder, btnLibraryTop, btnSettings, btnProfile));
             pills.addAll(topAppButtons);
             for (View button : pills) {
                 button.setOnFocusChangeListener((view, focused) -> view.animate()
@@ -2436,7 +2442,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         ViewGroup bar = findViewById(R.id.topButtons);
         for (int i = 0; i < bar.getChildCount(); i++) {
             View button = bar.getChildAt(i);
-            if (button != btnInputs && button.getVisibility() == View.VISIBLE) return button;
+            if (button != btnInputs && button != btnProfile && button.getVisibility() == View.VISIBLE) return button;
         }
         return findViewById(R.id.btnSettings);
     }
@@ -3157,6 +3163,25 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         } catch (Exception e) {
             Toast.makeText(this, R.string.not_available, Toast.LENGTH_SHORT).show();
         }
+    }
+
+    /** profile_pill: OK opens Accounts settings; the photo pushed as avatar.png / avatar.jpg replaces the person
+     *  icon, inset by a ring that turns white on focus. Read off the main thread, since it is on external storage. */
+    private void showProfilePill() {
+        btnProfile.setVisibility(View.VISIBLE);
+        btnProfile.setOnClickListener(v -> open(SystemSettings.accounts(this)));
+        float density = getResources().getDisplayMetrics().density;
+        int ring = Math.round(3 * density);
+        int size = Math.round(42 * density) - 2 * ring;
+        new Thread(() -> {
+            Bitmap photo = ProfilePhoto.circle(Config.avatar(Config.dir(this)), size);
+            if (photo == null) return;
+            btnProfile.post(() -> {
+                btnProfile.setImageTintList(null);
+                btnProfile.setPadding(ring, ring, ring, ring);
+                btnProfile.setImageBitmap(photo);
+            });
+        }, "profile-photo").start();
     }
 
     private void open(Intent i) {

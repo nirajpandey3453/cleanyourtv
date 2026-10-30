@@ -347,6 +347,11 @@
                 android:clipToPadding="false"
                 android:orientation="horizontal">
 
+                <ImageView
+                    android:id="@+id/btnProfile"
+                    style="@style/ProfilePill"
+                    android:nextFocusDown="@+id/grid" />
+
                 <TextView
                     android:id="@+id/btnSettings"
                     style="@style/TopButton"
